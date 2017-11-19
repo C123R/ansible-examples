@@ -91,7 +91,7 @@ def is_failed(deploy_path, deployment):
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            src=dict(type='path'),
+            src_path=dict(type='path'),
             deployment=dict(required=True),
             deploy_path=dict(type='path', default='/www/jboss-test/deployments'),
             state=dict(choices=['absent', 'present'], default='present'),
@@ -101,20 +101,23 @@ def main():
 
     result = dict(changed=False)
 
-    src = module.params['src']
+    src_path = module.params['src']
     deployment = module.params['deployment']
     deploy_path = module.params['deploy_path']
     state = module.params['state']
 
     if not os.path.exists(deploy_path):
         module.fail_json(msg="deploy_path does not exist.")
+    
+    if not os.path.exists(src_path):
+        module.fail_json(msg="src_path does not exist.")
 
     deployed = is_empty(deploy_path)
-    source = is_empty(src)
+    source = is_empty(src_path)
 
-    if state == 'present' and not deployed:
-        if not source:
-            module.fail_json(msg='Source file %s does not exist.' % src)
+    if state == 'present' and deployed:
+        if source:
+            module.fail_json(msg='Source path(%s) is empty.' % src)
         if is_failed(deploy_path, deployment):
             # Clean up old failed deployment
             os.remove(os.path.join(deploy_path, "%s.failed" % deployment))
